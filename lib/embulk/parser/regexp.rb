@@ -17,6 +17,14 @@ module Embulk
           "field_types" => config.param("field_types", :array),
         }
 
+        # set default value
+        task["field_types"].each do |v|
+          case v["type"]
+          when "timestamp"
+            v["opts"]["time_format"] ||= '%d/%b/%Y:%T %z'
+          end
+        end
+        
         columns = task["field_types"].each_with_index.map do |c,i|
           Column.new(i, c["name"], c["type"].to_sym)
         end
@@ -38,7 +46,7 @@ module Embulk
             record = []
             if (m = @regexp.match line)
               task["field_types"].each do |v|
-                record << type_convert(m[v["name"]], v["type"])
+                record << type_convert(m[v["name"]], v["type"],v["opts"])
               end
               page_builder.add record
             else
@@ -52,7 +60,7 @@ module Embulk
 
       private
 
-      def type_convert(v, field_type)
+      def type_convert(v, field_type,opts={  })
         case field_type
           when "string"
             v
@@ -61,7 +69,7 @@ module Embulk
           when "double"
             v.to_f
           when "timestamp"
-            DateTime.strptime(v, '%d/%b/%Y:%T %z').to_time
+            DateTime.strptime(v, opts["time_format"]).to_time
           when "boolean"
             BOOLEAN_TYPES.include? v.downcase
           else
