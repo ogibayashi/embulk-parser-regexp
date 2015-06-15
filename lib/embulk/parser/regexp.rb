@@ -7,6 +7,9 @@ module Embulk
       Plugin.register_parser("regexp", self)
       BOOLEAN_TYPES = ["yes", "true", "1"]
 
+      class UnmatchedLineException < RuntimeError
+      end
+      
       def self.transaction(config, &control)
         # configuration code:
         task = {
@@ -33,11 +36,15 @@ module Embulk
         while decoder.nextFile
           while line = decoder.poll
             record = []
-            m = @regexp.match line
-            task["field_types"].each do |v|
-              record << type_convert(m[v["name"]], v["type"])
+            if (m = @regexp.match line)
+              task["field_types"].each do |v|
+                record << type_convert(m[v["name"]], v["type"])
+              end
+              page_builder.add record
+            else
+              raise UnmatchedLineException, "Unmatched line: #{line}"
             end
-            page_builder.add record
+
           end
         end
         page_builder.finish
