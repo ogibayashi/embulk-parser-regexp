@@ -15,6 +15,7 @@ module Embulk
         task = {
           "format" => config.param("format", :string),
           "field_types" => config.param("field_types", :array),
+          "ignore_unmatched_line" => config.param("ignore_unmatched_line",:bool, default:false)
         }
 
         # set default value
@@ -36,6 +37,7 @@ module Embulk
         # initialization code:
         @regexp = Regexp.new task["format"]
         @field_types = task["field_types"]
+        @ignore_unmatched_line = task["ignore_unmatched_line"]
       end
 
       def run(file_input)
@@ -50,7 +52,7 @@ module Embulk
               end
               page_builder.add record
             else
-              raise UnmatchedLineException, "Unmatched line: #{line}"
+              raise UnmatchedLineException, "Unmatched line: #{line}" unless @ignore_unmatched_line
             end
 
           end
