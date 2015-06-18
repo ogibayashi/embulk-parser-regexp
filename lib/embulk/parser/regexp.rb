@@ -1,4 +1,4 @@
-require "date"
+require "time"
 
 module Embulk
   module Parser
@@ -71,7 +71,7 @@ module Embulk
           when "double"
             v.to_f
           when "timestamp"
-            DateTime.strptime(v, opts["time_format"]).to_time
+            Time.strptime(v, opts["time_format"])
           when "boolean"
             BOOLEAN_TYPES.include? v.downcase
           else
